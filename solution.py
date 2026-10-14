@@ -26,12 +26,12 @@ from visualization import (
 # Feel free to experiment with them, but note that your solution will also be
 # evaluated with different values (especially with different random seeds).
 # ---------------------------------------------------------------------------
-NUM_POINTS = 20
+NUM_POINTS = 30
 X_RANGE = 20.0
 Y_RANGE = 20.0
-MAP_SEED = 42
+MAP_SEED = 24
 
-NOISE_STD = 0.25
+NOISE_STD = 0.55
 OBSERVATION_RATE = 0.8
 OBSERVATIONS_SEED = 7
 
@@ -65,7 +65,36 @@ def associate(map_points: Map, observations: List[Point]) -> List[Tuple[int, int
         tuples, e.g. ``[(0, 12), (3, 5)]`` means that observation 12 was
         generated from map point 0, and observation 5 from map point 3.
     """
-    raise NotImplementedError("Step 3 (data association) is yours to implement")
+
+
+    """
+    Creo una lista con ogni copia observation, map points e la loro distanza
+    seleziono le copie con minor distanza saltando quelle che contengono punti di coppie gia selezionate
+    """
+
+    pairs = []
+    for x, o in enumerate(observations):
+        for y, m in enumerate(map_points): 
+            pairs.append((math.dist(o, m), y, x))
+
+    pairs.sort()
+
+    used_map = []
+    used_obs = [] 
+    out = []
+
+    for p in pairs:
+        if p[1] in used_map or p[2] in used_obs:
+            continue 
+        out.append((p[1], p[2]))
+        used_map.append(p[1])
+        used_obs.append(p[2])
+        if len(out) == len(observations): # se ho trovato una coppia per ogni obs mi fermo
+            break
+        
+    return out
+
+    #raise NotImplementedError("Step 3 (data association) is yours to implement")
 
 
 # ---------------------------------------------------------------------------
@@ -87,8 +116,22 @@ def correct_map(
     Returns:
         The corrected map: a list of ``(x, y)`` tuples with the same length
         and the same order as ``map_points``.
+    """    
+
     """
-    raise NotImplementedError("Step 4 (map correction) is yours to implement")
+    Copio map_points e per ogni associazione sovrascrivo il punto con la media
+    """
+
+    corrected = [(p[0], p[1]) for p in map_points]
+
+    for a in associations:
+        mx, my = map_points[a[0]]
+        ox, oy = observations[a[1]]
+        corrected[a[0]] = ((mx + ox) / 2, (my + oy) / 2)
+
+    return corrected
+
+    #raise NotImplementedError("Step 4 (map correction) is yours to implement")
 
 
 # ---------------------------------------------------------------------------
@@ -112,7 +155,52 @@ def find_path(corrected_map: Map) -> List[int]:
       arrow (arrows that only touch at a shared node do not count as
       crossings). You can check it visually with ``visualize_path``.
     """
-    raise NotImplementedError("Step 5 (path finding) is yours to implement")
+
+    """
+    uso nearest neighbour come base e poi 2-opt per efficentarlo
+    """
+
+
+
+    pts = list(corrected_map)
+    n = len(pts)
+    if n <= 2:
+        return list(range(n))
+
+    def d(a: int, b: int) -> float:# get distance from index
+        return math.dist(pts[a], pts[b])
+
+    # nearest neighbour partendo dal nodo 0, 0 scelto arbitrariamente
+    unvisited = set(range(1, n))
+    path = [0]
+    while unvisited:
+        last = path[-1]
+        nxt = min(unvisited, key=lambda k: d(last, k))
+        path.append(nxt)
+        unvisited.remove(nxt)
+
+    # 2-opt
+    eps = 1e-12
+    improved = True
+    while improved:
+        improved = False
+        for i in range(n - 1):
+            for j in range(i + 1, n):
+                
+                before = d(path[i - 1], path[i]) if i > 0 else 0.0
+                after = d(path[j], path[j + 1]) if j < n - 1 else 0.0
+                new_before = d(path[i - 1], path[j]) if i > 0 else 0.0
+                new_after = d(path[i], path[j + 1]) if j < n - 1 else 0.0
+
+                if new_before + new_after < before + after - eps:
+                    path[i:j + 1] = reversed(path[i:j + 1])
+                    improved = True
+
+    return path
+
+
+
+    #raise NotImplementedError("Step 5 (path finding) is yours to implement")
 
 
 # ---------------------------------------------------------------------------
