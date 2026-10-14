@@ -68,8 +68,9 @@ def associate(map_points: Map, observations: List[Point]) -> List[Tuple[int, int
 
 
     """
-    Creo una lista con ogni copia observation, map points e la loro distanza
-    seleziono le copie con minor distanza saltando quelle che contengono punti di coppie gia selezionate
+    I create a list containing every possible observation-map point pair and their distance
+    I select the pairs with the smallest distances, skipping those that contain points
+    belonging to pairs that have already been selected
     """
 
     pairs = []
@@ -89,7 +90,7 @@ def associate(map_points: Map, observations: List[Point]) -> List[Tuple[int, int
         out.append((p[1], p[2]))
         used_map.append(p[1])
         used_obs.append(p[2])
-        if len(out) == len(observations): # se ho trovato una coppia per ogni obs mi fermo
+        if len(out) == len(observations): # If I have found a pair for every observation, I stop
             break
         
     return out
@@ -119,7 +120,8 @@ def correct_map(
     """    
 
     """
-    Copio map_points e per ogni associazione sovrascrivo il punto con la media
+    I copy map_points and overwrite each point with the average coordinates
+    for every association
     """
 
     corrected = [(p[0], p[1]) for p in map_points]
@@ -157,7 +159,7 @@ def find_path(corrected_map: Map) -> List[int]:
     """
 
     """
-    uso nearest neighbour come base e poi 2-opt per efficentarlo
+    I use nearest neighbour as a starting point and then apply 2-opt to improve it
     """
 
 
@@ -170,7 +172,7 @@ def find_path(corrected_map: Map) -> List[int]:
     def d(a: int, b: int) -> float:# get distance from index
         return math.dist(pts[a], pts[b])
 
-    # nearest neighbour partendo dal nodo 0, 0 scelto arbitrariamente
+    #nearest neighbour, starting from node 0, chosen arbitrarily
     unvisited = set(range(1, n))
     path = [0]
     while unvisited:
@@ -179,14 +181,14 @@ def find_path(corrected_map: Map) -> List[int]:
         path.append(nxt)
         unvisited.remove(nxt)
 
-    # 2-opt
+    #2-opt
     eps = 1e-12
     improved = True
     while improved:
         improved = False
         for i in range(n - 1):
             for j in range(i + 1, n):
-                
+
                 before = d(path[i - 1], path[i]) if i > 0 else 0.0
                 after = d(path[j], path[j + 1]) if j < n - 1 else 0.0
                 new_before = d(path[i - 1], path[j]) if i > 0 else 0.0
